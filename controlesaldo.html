@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Controle Financeiro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Cores de borda para identificação rápida */
+        .p0 { border-left: 5px solid #ef4444; } /* Vermelho - Essencial */
+        .p1 { border-left: 5px solid #f59e0b; } /* Amarelo - Necessário */
+        .p2 { border-left: 5px solid #3b82f6; } /* Azul - Desejável */
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen pb-10">
+
+    <div class="max-w-md mx-auto p-4">
+        <h1 class="text-2xl font-bold text-gray-800 mb-6 text-center">💰 Controle de Gastos</h1>
+
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                <p class="text-xs text-gray-500 uppercase font-bold mb-1">Dinheiro</p>
+                <input type="number" id="saldoDinheiro" oninput="atualizarGeral()" placeholder="0,00" class="text-xl font-bold w-full focus:outline-none text-green-600">
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                <p class="text-xs text-gray-500 uppercase font-bold mb-1">Cartão (Limite)</p>
+                <input type="number" id="saldoCartao" oninput="atualizarGeral()" placeholder="0,00" class="text-xl font-bold w-full focus:outline-none text-blue-600">
+            </div>
+        </div>
+
+        <div id="statusCard" class="p-6 rounded-2xl shadow-lg mb-8 transition-colors duration-500">
+            <p class="text-sm opacity-90 font-medium">Saldo Disponível (Final)</p>
+            <h2 id="saldoFinal" class="text-4xl font-black">R$ 0,00</h2>
+            <p id="feedbackMensagem" class="text-xs mt-2 font-bold uppercase tracking-wider"></p>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm mb-8">
+            <h3 class="font-black text-gray-800 mb-4 uppercase text-sm tracking-widest">Novo Lançamento</h3>
+            <div class="space-y-4">
+                <input type="text" id="desc" placeholder="O que você vai comprar?" class="w-full border-b-2 border-gray-100 p-2 focus:border-black outline-none transition-all">
+                <input type="number" id="valor" placeholder="Quanto custa? (R$)" class="w-full border-b-2 border-gray-100 p-2 focus:border-black outline-none transition-all">
+                
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase">Prioridade do Gasto</label>
+                    <select id="prioridade" class="w-full border p-3 rounded-lg bg-gray-50 font-medium focus:ring-2 focus:ring-black outline-none">
+                        <option value="P0">P0 - Essencial (Saúde/Alimentação)</option>
+                        <option value="P1">P1 - Necessário (Gasolina/Luz/Net)</option>
+                        <option value="P2">P2 - Desejável (Lazer/Vestuário)</option>
+                    </select>
+                </div>
+                
+                <button onclick="adicionarGasto()" class="w-full bg-black text-white py-4 rounded-xl font-black hover:bg-gray-800 transition-transform active:scale-95 shadow-lg">
+                    ADICIONAR À LISTA
+                </button>
+            </div>
+        </div>
+
+        <div class="flex justify-between items-center mb-4 px-1">
+            <h3 class="font-black text-gray-400 uppercase text-xs tracking-widest">Gastos Planejados</h3>
+            <button onclick="limparTudo()" class="text-[10px] text-red-500 font-bold underline">LIMPAR LISTA</button>
+        </div>
+        
+        <div id="listaGastos" class="space-y-3">
+            </div>
+    </div>
+
+    <script>
+        // Inicialização de dados
+        let gastos = JSON.parse(localStorage.getItem('meusGastos')) || [];
+        
+        // Carrega os saldos salvos ao abrir
+        document.getElementById('saldoDinheiro').value = localStorage.getItem('s_dinheiro') || "";
+        document.getElementById('saldoCartao').value = localStorage.getItem('s_cartao') || "";
+
+        function adicionarGasto() {
+            const desc = document.getElementById('desc').value;
+            const valorInput = document.getElementById('valor').value;
+            const valor = parseFloat(valorInput);
+            const prioridade = document.getElementById('prioridade').value;
+
+            if (desc && valor > 0) {
+                gastos.push({ desc, valor, prioridade, id: Date.now() });
+                salvarEAtualizar();
+                document.getElementById('desc').value = '';
+                document.getElementById('valor').value = '';
+            } else {
+                alert("Por favor, preencha o nome e um valor válido.");
+            }
+        }
+
+        function deletarGasto(id) {
+            gastos = gastos.filter(g => g.id !== id);
+            salvarEAtualizar();
+        }
+
+        function limparTudo() {
+            if(confirm("Deseja apagar todos os gastos da lista?")) {
+                gastos = [];
+                salvarEAtualizar();
+            }
+        }
+
+        function salvarEAtualizar() {
+            localStorage.setItem('meusGastos', JSON.stringify(gastos));
+            // Salva também os valores de saldo
+            localStorage.setItem('s_dinheiro', document.getElementById('saldoDinheiro').value);
+            localStorage.setItem('s_cartao', document.getElementById('saldoCartao').value);
+            atualizarGeral();
+        }
+
+        function atualizarGeral() {
+            const sDinheiro = parseFloat(document.getElementById('saldoDinheiro').value) || 0;
+            const sCartao = parseFloat(document.getElementById('saldoCartao').value) || 0;
+            const saldoDisponivelTotal = sDinheiro + sCartao;
+
+            // Salva saldos enquanto digita
+            localStorage.setItem('s_dinheiro', document.getElementById('saldoDinheiro').value);
+            localStorage.setItem('s_cartao', document.getElementById('saldoCartao').value);
+
+            const listaElement = document.getElementById('listaGastos');
+            listaElement.innerHTML = '';
+
+            let totalGasto = 0;
+
+            // Ordenação: P0 primeiro, depois P1, depois P2
+            const pesos = { "P0": 1, "P1": 2, "P2": 3 };
+            const nomes = { "P0": "Essencial", "P1": "Necessário", "P2": "Desejável" };
+            
+            gastos.sort((a, b) => pesos[a.prioridade] - pesos[b.prioridade]);
+
+            gastos.forEach(g => {
+                totalGasto += g.valor;
+                const div = document.createElement('div');
+                div.className = `bg-white p-4 rounded-xl shadow-sm flex justify-between items-center transition-all ${g.prioridade.toLowerCase()}`;
+                div.innerHTML = `
+                    <div>
+                        <p class="font-bold text-gray-800">${g.desc}</p>
+                        <p class="text-[10px] text-gray-400 font-black uppercase tracking-tighter">${nomes[g.prioridade]}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-black text-gray-900">R$ ${g.valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+                        <button onclick="deletarGasto(${g.id})" class="text-red-400 text-[10px] font-bold uppercase hover:text-red-600">Remover</button>
+                    </div>
+                `;
+                listaElement.appendChild(div);
+            });
+
+            const saldoFinal = saldoDisponivelTotal - totalGasto;
+            const h2Saldo = document.getElementById('saldoFinal');
+            const cardStatus = document.getElementById('statusCard');
+            const feedback = document.getElementById('feedbackMensagem');
+            
+            h2Saldo.innerText = `R$ ${saldoFinal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            
+            if (saldoFinal < 0) {
+                cardStatus.className = "bg-red-600 text-white p-6 rounded-2xl shadow-lg mb-8 transition-colors";
+                feedback.innerText = "⚠️ Atenção: Gastos superam o saldo!";
+            } else {
+                cardStatus.className = "bg-emerald-500 text-white p-6 rounded-2xl shadow-lg mb-8 transition-colors";
+                feedback.innerText = "✅ Saldo dentro do planejado";
+            }
+        }
+
+        // Início
+        atualizarGeral();
+    </script>
+</body>
+</html>
