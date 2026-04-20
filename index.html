@@ -73,10 +73,31 @@
 
     <script>
 
-        // Import the functions you need from the SDKs you need
-        import { initializeApp } from "firebase/app";
-        // TODO: Add SDKs for Firebase products that you want to use
-        // https://firebase.google.com/docs/web/setup#available-libraries
+       // Inicializar Firebase
+        try {
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.database();
+            const refFinanceiro = db.ref('meu_financeiro');
+
+            // Teste de conexão imediato
+            db.ref(".info/connected").on("value", (snap) => {
+                if (snap.val() === true) {
+                    console.log("Conectado ao Firebase!");
+                } else {
+                    console.log("Tentando conectar...");
+                }
+            });
+
+            refFinanceiro.on('value', (snapshot) => {
+                const data = snapshot.val();
+                console.log("Dados recebidos:", data);
+                // ... resto do seu código de atualização
+            }, (error) => {
+                alert("Erro de permissão ou conexão: " + error.message);
+            });
+        } catch (e) {
+            alert("Erro na configuração do Firebase: " + e.message);
+        }
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
