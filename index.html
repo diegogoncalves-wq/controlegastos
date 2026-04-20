@@ -23,16 +23,12 @@
         let db, gastos = [];
         let mesAtual, anoAtual;
 
-        // --- FUNÇÕES DE NAVEGAÇÃO ---
-
         function inicializarPeriodo() {
             const agora = new Date();
             mesAtual = (agora.getMonth() + 1).toString().padStart(2, '0');
             anoAtual = agora.getFullYear().toString();
-            
             document.getElementById('selectMes').value = mesAtual;
             document.getElementById('selectAno').value = anoAtual;
-            
             conectarAoMes();
         }
 
@@ -44,12 +40,8 @@
 
         function conectarAoMes() {
             if (!db) return;
-            
-            // Remove ouvintes anteriores para não duplicar dados
             db.ref(`meu_financeiro/${anoAtual}/${mesAtual}`).off();
-            
             const refMes = db.ref(`meu_financeiro/${anoAtual}/${mesAtual}`);
-            
             refMes.on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
@@ -64,8 +56,6 @@
                 atualizarInterface();
             });
         }
-
-        // --- FUNÇÕES DE DADOS ---
 
         window.salvarEAtualizar = function() {
             if (db) {
@@ -171,20 +161,17 @@
             const saldoReal = totalInic - exec;
 
             document.getElementById('saldoReal').innerText = `R$ ${saldoReal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-            document.getElementById('saldoFinal').innerText = `R$ ${saldoPrevisto.toFixed(0)}`;
-            document.getElementById('statusCard').className = saldoPrevisto < 0 ? "bg-red-600 text-white p-6 rounded-[2.5rem] shadow-xl mb-6 transition-all" : "bg-slate-900 text-white p-6 rounded-[2.5rem] shadow-xl mb-6 transition-all";
+            document.getElementById('saldoFinal').innerText = `R$ ${saldoPrevisto.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('totalPlanejado').innerText = `R$ ${plan.toFixed(0)}`;
+            
+            const card = document.getElementById('statusCard');
+            card.className = saldoPrevisto < 0 ? "bg-red-600 text-white p-6 rounded-[2.5rem] shadow-xl mb-6 transition-all duration-500" : "bg-slate-900 text-white p-6 rounded-[2.5rem] shadow-xl mb-6 transition-all duration-500";
         }
 
         window.onload = function() {
             firebase.initializeApp(firebaseConfig);
             db = firebase.database();
             inicializarPeriodo();
-
-            db.ref(".info/connected").on("value", (snap) => {
-                const label = document.getElementById('cloudStatus');
-                label.innerText = snap.val() ? "☁️ Online" : "⚠️ Offline";
-                label.className = snap.val() ? "text-[10px] font-bold text-emerald-500 uppercase tracking-widest" : "text-[10px] font-bold text-amber-500 uppercase tracking-widest";
-            });
         };
     </script>
 
@@ -208,7 +195,6 @@
             <select id="selectAno" onchange="mudarPeriodo()" class="bg-transparent font-black text-xs outline-none p-2">
                 <option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option>
             </select>
-            <p id="cloudStatus" class="text-[8px] font-bold text-emerald-500 pr-2">☁️ Online</p>
         </div>
 
         <div class="grid grid-cols-2 gap-3 mb-4 text-center">
@@ -222,11 +208,19 @@
             </div>
         </div>
 
-        <div id="statusCard" class="bg-slate-900 text-white p-6 rounded-[2rem] shadow-xl mb-6 transition-all duration-500">
-            <div class="w-full text-center">
-                <p class="text-[10px] uppercase opacity-60 font-bold tracking-widest">Saldo Real Atual</p>
-                <h2 id="saldoReal" class="text-3xl font-black text-emerald-400">R$ 0,00</h2>
-                <p class="text-[10px] uppercase opacity-40 mt-2">Previsão Final: <span id="saldoFinal" class="font-bold">R$ 0</span></p>
+        <div id="statusCard" class="bg-slate-900 text-white p-6 rounded-[2.5rem] shadow-xl mb-6">
+            <div class="grid grid-cols-2 gap-4 text-center mb-4">
+                <div>
+                    <p class="text-[10px] uppercase opacity-60 font-bold tracking-widest mb-1">Saldo Real</p>
+                    <h2 id="saldoReal" class="text-xl font-black text-emerald-400 leading-none">R$ 0,00</h2>
+                </div>
+                <div class="border-l border-white/10">
+                    <p class="text-[10px] uppercase opacity-60 font-bold tracking-widest mb-1">Previsão Final</p>
+                    <h2 id="saldoFinal" class="text-xl font-black text-cyan-400 leading-none">R$ 0,00</h2>
+                </div>
+            </div>
+            <div class="text-center border-t border-white/10 pt-4">
+                <p class="text-[10px] font-black uppercase opacity-40">Planejado Total: <span id="totalPlanejado">R$ 0</span></p>
             </div>
         </div>
 
