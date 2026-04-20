@@ -3,89 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Controle Financeiro</title>
+    <title>Financeiro: Plano vs Real</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Cores de borda para identificação rápida */
-        .p0 { border-left: 5px solid #ef4444; } /* Vermelho - Essencial */
-        .p1 { border-left: 5px solid #f59e0b; } /* Amarelo - Necessário */
-        .p2 { border-left: 5px solid #3b82f6; } /* Azul - Desejável */
+        .p0 { border-left: 5px solid #ef4444; } 
+        .p1 { border-left: 5px solid #f59e0b; } 
+        .p2 { border-left: 5px solid #3b82f6; }
+        .executado { opacity: 0.6; background-color: #f1f5f9 !important; }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen pb-10">
+<body class="bg-gray-50 min-h-screen pb-10">
 
     <div class="max-w-md mx-auto p-4">
-        <h1 class="text-2xl font-bold text-gray-800 mb-6 text-center">💰 Controle de Gastos</h1>
+        <h1 class="text-xl font-black text-gray-800 mb-6 text-center uppercase tracking-tighter">Planejado vs Executado</h1>
 
-        <div class="grid grid-cols-2 gap-4 mb-6">
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                <p class="text-xs text-gray-500 uppercase font-bold mb-1">Dinheiro</p>
-                <input type="number" id="saldoDinheiro" oninput="atualizarGeral()" placeholder="0,00" class="text-xl font-bold w-full focus:outline-none text-green-600">
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <div class="bg-white p-3 rounded-xl shadow-sm border text-center">
+                <p class="text-[9px] text-gray-400 uppercase font-bold">Saldo Dinheiro</p>
+                <input type="number" id="saldoDinheiro" oninput="salvarSaldos()" class="text-lg font-bold w-full outline-none text-green-600 text-center bg-transparent">
             </div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                <p class="text-xs text-gray-500 uppercase font-bold mb-1">Cartão (Limite)</p>
-                <input type="number" id="saldoCartao" oninput="atualizarGeral()" placeholder="0,00" class="text-xl font-bold w-full focus:outline-none text-blue-600">
+            <div class="bg-white p-3 rounded-xl shadow-sm border text-center">
+                <p class="text-[9px] text-gray-400 uppercase font-bold">Limite Cartão</p>
+                <input type="number" id="saldoCartao" oninput="salvarSaldos()" class="text-lg font-bold w-full outline-none text-blue-600 text-center bg-transparent">
             </div>
         </div>
 
-        <div id="statusCard" class="p-6 rounded-2xl shadow-lg mb-8 transition-colors duration-500">
-            <p class="text-sm opacity-90 font-medium">Saldo Disponível (Final)</p>
-            <h2 id="saldoFinal" class="text-4xl font-black">R$ 0,00</h2>
-            <p id="feedbackMensagem" class="text-xs mt-2 font-bold uppercase tracking-wider"></p>
-        </div>
-
-        <div class="bg-white p-6 rounded-2xl shadow-sm mb-8">
-            <h3 class="font-black text-gray-800 mb-4 uppercase text-sm tracking-widest">Novo Lançamento</h3>
-            <div class="space-y-4">
-                <input type="text" id="desc" placeholder="O que você vai comprar?" class="w-full border-b-2 border-gray-100 p-2 focus:border-black outline-none transition-all">
-                <input type="number" id="valor" placeholder="Quanto custa? (R$)" class="w-full border-b-2 border-gray-100 p-2 focus:border-black outline-none transition-all">
-                
+        <div id="statusCard" class="bg-slate-900 text-white p-5 rounded-3xl shadow-xl mb-6 transition-all">
+            <div class="grid grid-cols-2 gap-4 mb-4 border-b border-white/10 pb-4">
                 <div>
-                    <label class="text-[10px] font-bold text-gray-400 uppercase">Prioridade do Gasto</label>
-                    <select id="prioridade" class="w-full border p-3 rounded-lg bg-gray-50 font-medium focus:ring-2 focus:ring-black outline-none">
-                        <option value="P0">P0 - Essencial (Saúde/Alimentação)</option>
-                        <option value="P1">P1 - Necessário (Gasolina/Luz/Net)</option>
-                        <option value="P2">P2 - Desejável (Lazer/Vestuário)</option>
-                    </select>
+                    <p class="text-[10px] uppercase opacity-60 font-bold">Saldo Real Atual</p>
+                    <h2 id="saldoReal" class="text-xl font-black text-emerald-400">R$ 0,00</h2>
                 </div>
-                
-                <button onclick="adicionarGasto()" class="w-full bg-black text-white py-4 rounded-xl font-black hover:bg-gray-800 transition-transform active:scale-95 shadow-lg">
-                    ADICIONAR À LISTA
-                </button>
+                <div class="text-right">
+                    <p class="text-[10px] uppercase opacity-60 font-bold">Saldo Previsto</p>
+                    <h2 id="saldoFinal" class="text-xl font-black">R$ 0,00</h2>
+                </div>
+            </div>
+            <div class="flex justify-between text-[11px] font-bold uppercase tracking-wider">
+                <span>Planejado: <span id="totalPlanejado" class="text-white">R$ 0</span></span>
+                <span>Executado: <span id="totalExecutado" class="text-emerald-400">R$ 0</span></span>
+            </div>
+            <div class="w-full bg-white/10 h-1.5 rounded-full mt-3 overflow-hidden">
+                <div id="progressBar" class="bg-emerald-400 h-full transition-all duration-700" style="width: 0%"></div>
             </div>
         </div>
 
-        <div class="flex justify-between items-center mb-4 px-1">
-            <h3 class="font-black text-gray-400 uppercase text-xs tracking-widest">Gastos Planejados</h3>
-            <button onclick="limparTudo()" class="text-[10px] text-red-500 font-bold underline">LIMPAR LISTA</button>
+        <div class="bg-white p-5 rounded-2xl shadow-sm mb-6 border border-gray-100">
+            <div class="flex gap-2 mb-3">
+                <input type="text" id="desc" placeholder="Item..." class="w-1/2 border-b p-2 outline-none text-sm">
+                <input type="number" id="valor" placeholder="R$" class="w-1/4 border-b p-2 outline-none text-sm">
+                <select id="prioridade" class="w-1/4 text-[10px] font-bold border-b bg-transparent outline-none">
+                    <option value="P0">P0</option>
+                    <option value="P1">P1</option>
+                    <option value="P2">P2</option>
+                </select>
+            </div>
+            <button onclick="adicionarGasto()" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-black text-xs uppercase shadow-md active:scale-95 transition-all">
+                Adicionar ao Plano
+            </button>
+        </div>
+
+        <div class="flex justify-between items-center mb-4 px-2">
+            <h3 class="font-black text-gray-400 uppercase text-[10px]">Lista de Prioridades</h3>
+            <button onclick="limparTudo()" class="text-[10px] text-red-400 font-bold uppercase underline">Limpar</button>
         </div>
         
-        <div id="listaGastos" class="space-y-3">
-            </div>
+        <div id="listaGastos" class="space-y-3"></div>
     </div>
 
     <script>
-        // Inicialização de dados
         let gastos = JSON.parse(localStorage.getItem('meusGastos')) || [];
         
-        // Carrega os saldos salvos ao abrir
         document.getElementById('saldoDinheiro').value = localStorage.getItem('s_dinheiro') || "";
         document.getElementById('saldoCartao').value = localStorage.getItem('s_cartao') || "";
 
         function adicionarGasto() {
             const desc = document.getElementById('desc').value;
-            const valorInput = document.getElementById('valor').value;
-            const valor = parseFloat(valorInput);
+            const valor = parseFloat(document.getElementById('valor').value);
             const prioridade = document.getElementById('prioridade').value;
 
             if (desc && valor > 0) {
-                gastos.push({ desc, valor, prioridade, id: Date.now() });
+                // Adiciona com status 'executado: false' por padrão
+                gastos.push({ desc, valor, prioridade, executado: false, id: Date.now() });
                 salvarEAtualizar();
                 document.getElementById('desc').value = '';
                 document.getElementById('valor').value = '';
-            } else {
-                alert("Por favor, preencha o nome e um valor válido.");
             }
+        }
+
+        function alternarStatus(id) {
+            const index = gastos.findIndex(g => g.id === id);
+            gastos[index].executado = !gastos[index].executado;
+            salvarEAtualizar();
         }
 
         function deletarGasto(id) {
@@ -94,74 +104,84 @@
         }
 
         function limparTudo() {
-            if(confirm("Deseja apagar todos os gastos da lista?")) {
+            if(confirm("Apagar toda a lista?")) {
                 gastos = [];
                 salvarEAtualizar();
             }
         }
 
-        function salvarEAtualizar() {
-            localStorage.setItem('meusGastos', JSON.stringify(gastos));
-            // Salva também os valores de saldo
+        function salvarSaldos() {
             localStorage.setItem('s_dinheiro', document.getElementById('saldoDinheiro').value);
             localStorage.setItem('s_cartao', document.getElementById('saldoCartao').value);
             atualizarGeral();
         }
 
+        function salvarEAtualizar() {
+            localStorage.setItem('meusGastos', JSON.stringify(gastos));
+            salvarSaldos();
+        }
+
         function atualizarGeral() {
             const sDinheiro = parseFloat(document.getElementById('saldoDinheiro').value) || 0;
             const sCartao = parseFloat(document.getElementById('saldoCartao').value) || 0;
-            const saldoDisponivelTotal = sDinheiro + sCartao;
-
-            // Salva saldos enquanto digita
-            localStorage.setItem('s_dinheiro', document.getElementById('saldoDinheiro').value);
-            localStorage.setItem('s_cartao', document.getElementById('saldoCartao').value);
+            const saldoTotalInicial = sDinheiro + sCartao;
 
             const listaElement = document.getElementById('listaGastos');
             listaElement.innerHTML = '';
 
-            let totalGasto = 0;
+            let planejado = 0;
+            let executado = 0;
 
-            // Ordenação: P0 primeiro, depois P1, depois P2
             const pesos = { "P0": 1, "P1": 2, "P2": 3 };
-            const nomes = { "P0": "Essencial", "P1": "Necessário", "P2": "Desejável" };
-            
             gastos.sort((a, b) => pesos[a.prioridade] - pesos[b.prioridade]);
 
             gastos.forEach(g => {
-                totalGasto += g.valor;
+                planejado += g.valor;
+                if(g.executado) executado += g.valor;
+
                 const div = document.createElement('div');
-                div.className = `bg-white p-4 rounded-xl shadow-sm flex justify-between items-center transition-all ${g.prioridade.toLowerCase()}`;
+                div.className = `bg-white p-4 rounded-xl shadow-sm flex justify-between items-center transition-all ${g.prioridade.toLowerCase()} ${g.executado ? 'executado' : ''}`;
+                
                 div.innerHTML = `
-                    <div>
-                        <p class="font-bold text-gray-800">${g.desc}</p>
-                        <p class="text-[10px] text-gray-400 font-black uppercase tracking-tighter">${nomes[g.prioridade]}</p>
+                    <div class="flex items-center gap-3">
+                        <button onclick="alternarStatus(${g.id})" class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${g.executado ? 'bg-emerald-500 border-emerald-500' : 'border-gray-300'}">
+                            ${g.executado ? '<svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>' : ''}
+                        </button>
+                        <div>
+                            <p class="font-bold text-gray-800 text-sm ${g.executado ? 'line-through' : ''}">${g.desc}</p>
+                            <p class="text-[9px] text-gray-400 font-black uppercase tracking-widest">${g.prioridade}</p>
+                        </div>
                     </div>
                     <div class="text-right">
-                        <p class="font-black text-gray-900">R$ ${g.valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
-                        <button onclick="deletarGasto(${g.id})" class="text-red-400 text-[10px] font-bold uppercase hover:text-red-600">Remover</button>
+                        <p class="font-black text-gray-900 text-sm">R$ ${g.valor.toFixed(2)}</p>
+                        <button onclick="deletarGasto(${g.id})" class="text-gray-300 text-[9px] font-bold uppercase hover:text-red-500">Excluir</button>
                     </div>
                 `;
                 listaElement.appendChild(div);
             });
 
-            const saldoFinal = saldoDisponivelTotal - totalGasto;
-            const h2Saldo = document.getElementById('saldoFinal');
+            const saldoPrevisto = saldoTotalInicial - planejado;
+            const saldoRealAtual = saldoTotalInicial - executado;
+            
+            // Atualiza Dashboard
+            document.getElementById('totalPlanejado').innerText = `R$ ${planejado.toFixed(0)}`;
+            document.getElementById('totalExecutado').innerText = `R$ ${executado.toFixed(0)}`;
+            document.getElementById('saldoFinal').innerText = `R$ ${saldoPrevisto.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('saldoReal').innerText = `R$ ${saldoRealAtual.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            
+            // Barra de Progresso (Quanto do planejado já foi executado)
+            const progress = document.getElementById('progressBar');
+            const perc = planejado > 0 ? (executado / planejado) * 100 : 0;
+            progress.style.width = Math.min(perc, 100) + "%";
+
             const cardStatus = document.getElementById('statusCard');
-            const feedback = document.getElementById('feedbackMensagem');
-            
-            h2Saldo.innerText = `R$ ${saldoFinal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-            
-            if (saldoFinal < 0) {
-                cardStatus.className = "bg-red-600 text-white p-6 rounded-2xl shadow-lg mb-8 transition-colors";
-                feedback.innerText = "⚠️ Atenção: Gastos superam o saldo!";
+            if (saldoPrevisto < 0) {
+                cardStatus.classList.replace('bg-slate-900', 'bg-red-600');
             } else {
-                cardStatus.className = "bg-emerald-500 text-white p-6 rounded-2xl shadow-lg mb-8 transition-colors";
-                feedback.innerText = "✅ Saldo dentro do planejado";
+                cardStatus.classList.replace('bg-red-600', 'bg-slate-900');
             }
         }
 
-        // Início
         atualizarGeral();
     </script>
 </body>
