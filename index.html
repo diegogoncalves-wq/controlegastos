@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financeiro Cloud: Multi-Mês</title>
+    <title>Financeiro Cloud: 2026-2030</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
@@ -27,8 +27,19 @@
             const agora = new Date();
             mesAtual = (agora.getMonth() + 1).toString().padStart(2, '0');
             anoAtual = agora.getFullYear().toString();
+            
+            // Define os valores nos selects (se o ano atual for > 2030, ele precisará ser adicionado manualmente depois)
             document.getElementById('selectMes').value = mesAtual;
-            document.getElementById('selectAno').value = anoAtual;
+            const selectAno = document.getElementById('selectAno');
+            
+            // Garante que se o ano atual estiver na lista, ele seja selecionado
+            if ([...selectAno.options].some(opt => opt.value === anoAtual)) {
+                selectAno.value = anoAtual;
+            } else {
+                selectAno.value = "2026"; // Fallback para o início da sua nova lista
+                anoAtual = "2026";
+            }
+            
             conectarAoMes();
         }
 
@@ -97,7 +108,7 @@
                 item.executado = false;
             } else {
                 const vSug = item.valor.toFixed(2).replace('.', ',');
-                const vPagoStr = prompt(`Pagar: ${item.desc}\nPlanejado: R$ ${vSug}`, vSug);
+                const vPagoStr = prompt(`Confirmar pago: ${item.desc}\nPlanejado: R$ ${vSug}`, vSug);
                 if (vPagoStr === null) return;
                 const vPago = parseFloat(vPagoStr.replace(',', '.'));
                 if (isNaN(vPago) || vPago < 0) return;
@@ -193,7 +204,11 @@
                 <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
             </select>
             <select id="selectAno" onchange="mudarPeriodo()" class="bg-transparent font-black text-xs outline-none p-2">
-                <option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option>
+                <option value="2026">2026</option>
+                <option value="2027">2027</option>
+                <option value="2028">2028</option>
+                <option value="2029">2029</option>
+                <option value="2030">2030</option>
             </select>
         </div>
 
