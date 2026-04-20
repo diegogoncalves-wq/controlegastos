@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financeiro Pro: Nuvem</title>
+    <title>Controle Financeiro Cloud</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
@@ -13,7 +13,7 @@
         .p0 { border-left: 6px solid #ef4444; }
         .p1 { border-left: 6px solid #f59e0b; }
         .p2 { border-left: 6px solid #3b82f6; }
-        .executado { opacity: 0.5; background-color: #f8fafc !important; border-left-color: #cbd5e1 !important; }
+        .executado { opacity: 0.5; background-color: #f1f5f9 !important; border-left-color: #cbd5e1 !important; }
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     </style>
 </head>
@@ -21,17 +21,17 @@
 
     <div class="max-w-md mx-auto p-4">
         <header class="mb-6 text-center">
-            <h1 class="text-xl font-black uppercase tracking-tighter">Fluxo Financeiro Real (Nuvem)</h1>
-            <p id="cloudStatus" class="text-[9px] font-bold text-amber-500 uppercase italic">Iniciando...</p>
+            <h1 class="text-xl font-black uppercase tracking-tighter">Fluxo Financeiro (Nuvem)</h1>
+            <p id="cloudStatus" class="text-[10px] font-bold text-amber-500 uppercase italic tracking-widest">Conectando...</p>
         </header>
 
         <div class="grid grid-cols-2 gap-3 mb-4">
             <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-200">
-                <p class="text-[9px] text-slate-400 uppercase font-black">Em Dinheiro</p>
+                <p class="text-[9px] text-slate-400 uppercase font-black">Dinheiro</p>
                 <input type="number" id="saldoDinheiro" oninput="salvarEAtualizar()" class="text-lg font-bold w-full outline-none text-emerald-600 bg-transparent">
             </div>
             <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-200">
-                <p class="text-[9px] text-slate-400 uppercase font-black">Limite Cartão</p>
+                <p class="text-[9px] text-slate-400 uppercase font-black">Cartão</p>
                 <input type="number" id="saldoCartao" oninput="salvarEAtualizar()" class="text-lg font-bold w-full outline-none text-blue-600 bg-transparent">
             </div>
         </div>
@@ -39,23 +39,23 @@
         <div id="statusCard" class="bg-slate-900 text-white p-6 rounded-[2rem] shadow-xl mb-6 transition-all duration-500">
             <div class="flex justify-between items-end mb-4">
                 <div>
-                    <p class="text-[10px] uppercase opacity-60 font-bold tracking-widest">Saldo Real Agora</p>
+                    <p class="text-[10px] uppercase opacity-60 font-bold tracking-widest">Saldo Real</p>
                     <h2 id="saldoReal" class="text-3xl font-black text-emerald-400">R$ 0,00</h2>
                 </div>
                 <div class="text-right">
-                    <p class="text-[10px] uppercase opacity-60 font-bold tracking-widest">Saldo Final Previsto</p>
+                    <p class="text-[10px] uppercase opacity-60 font-bold tracking-widest">Previsão Final</p>
                     <h2 id="saldoFinal" class="text-xl font-black italic">R$ 0,00</h2>
                 </div>
             </div>
             <div class="flex justify-between text-[10px] font-black uppercase border-t border-white/10 pt-4">
-                <span>Planejado: <span id="totalPlanejado">R$ 0</span></span>
-                <span>Pago: <span id="totalExecutado" class="text-emerald-400">R$ 0</span></span>
+                <span>Total Plano: <span id="totalPlanejado">R$ 0</span></span>
+                <span>Total Pago: <span id="totalExecutado" class="text-emerald-400">R$ 0</span></span>
             </div>
         </div>
 
         <div class="bg-white p-5 rounded-2xl shadow-sm mb-8 border border-slate-100">
             <div class="grid grid-cols-4 gap-2 mb-3">
-                <input type="text" id="desc" placeholder="Item..." class="col-span-2 border-b-2 p-2 outline-none text-sm focus:border-indigo-500 transition-colors">
+                <input type="text" id="desc" placeholder="Item..." class="col-span-2 border-b-2 p-2 outline-none text-sm focus:border-indigo-500">
                 <input type="number" id="valor" placeholder="R$" class="col-span-1 border-b-2 p-2 outline-none text-sm focus:border-indigo-500">
                 <select id="prioridade" class="col-span-1 text-[10px] font-black border-b-2 bg-transparent outline-none uppercase">
                     <option value="P0">P0</option>
@@ -64,7 +64,7 @@
                 </select>
             </div>
             <button onclick="adicionarGasto()" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-xs uppercase shadow-lg active:scale-95 transition-all">
-                Lançar no Planejamento
+                Adicionar ao Plano
             </button>
         </div>
 
@@ -72,44 +72,44 @@
     </div>
 
     <script>
-        // 1. Definição das configurações primeiro
+        // CONFIGURAÇÃO DO FIREBASE (Sincronizado com seus dados)
         const firebaseConfig = {
             apiKey: "AIzaSyD8w635i-gDPR0tInGyvO82L6rfz5a9R74",
             authDomain: "controle-de-gastos-83bff.firebaseapp.com",
-            databaseURL: https://controle-de-gastos-83bff-default-rtdb.firebaseio.com/,
+            databaseURL: "https://controle-de-gastos-83bff-default-rtdb.firebaseio.com",
             projectId: "controle-de-gastos-83bff",
             storageBucket: "controle-de-gastos-83bff.firebasestorage.app",
             messagingSenderId: "206236011422",
             appId: "1:206236011422:web:83554e33144e0b7e99e48f"
         };
 
+        // Variáveis Globais
         let db, refFinanceiro, gastos = [];
 
-        // 2. Inicialização com tratamento de erro
+        // Inicialização
         try {
             firebase.initializeApp(firebaseConfig);
             db = firebase.database();
             refFinanceiro = db.ref('meu_financeiro');
             
-            console.log("Firebase inicializado.");
-            document.getElementById('cloudStatus').innerText = "☁️ Conectando...";
-
-            // Monitor de conexão
+            // Monitor de Conexão
             db.ref(".info/connected").on("value", (snap) => {
+                const statusLabel = document.getElementById('cloudStatus');
                 if (snap.val() === true) {
-                    document.getElementById('cloudStatus').innerText = "☁️ Sincronizado";
-                    document.getElementById('cloudStatus').className = "text-[9px] font-bold text-emerald-500 uppercase";
+                    statusLabel.innerText = "☁️ Sincronizado";
+                    statusLabel.className = "text-[10px] font-bold text-emerald-500 uppercase italic tracking-widest";
                 } else {
-                    document.getElementById('cloudStatus').innerText = "❌ Offline";
-                    document.getElementById('cloudStatus').className = "text-[9px] font-bold text-red-500 uppercase";
+                    statusLabel.innerText = "⚠️ Tentando conectar...";
+                    statusLabel.className = "text-[10px] font-bold text-amber-500 uppercase italic tracking-widest";
                 }
             });
 
-            // Escutar dados
+            // Escutar Dados da Nuvem
             refFinanceiro.on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
                     gastos = data.gastos || [];
+                    // Atualiza saldos se não estiver digitando
                     if (document.activeElement !== document.getElementById('saldoDinheiro')) {
                         document.getElementById('saldoDinheiro').value = data.s_dinheiro || "";
                     }
@@ -117,32 +117,29 @@
                         document.getElementById('saldoCartao').value = data.s_cartao || "";
                     }
                     atualizarInterface();
-                } else {
-                    document.getElementById('cloudStatus').innerText = "☁️ Nuvem Vazia";
                 }
-            }, (error) => {
-                alert("Erro Firebase: " + error.message);
             });
 
-        } catch (e) {
-            alert("Erro ao iniciar: " + e.message);
+        } catch (error) {
+            alert("Erro ao iniciar Firebase: " + error.message);
         }
 
-        // 3. Funções de suporte
+        // --- FUNÇÕES DE AÇÃO ---
+
         function salvarEAtualizar() {
             if(!refFinanceiro) return;
-            document.getElementById('cloudStatus').innerText = "⏳ Salvando...";
             refFinanceiro.set({
                 gastos: gastos,
                 s_dinheiro: document.getElementById('saldoDinheiro').value,
                 s_cartao: document.getElementById('saldoCartao').value
-            });
+            }).catch(e => alert("Erro ao salvar: " + e.message));
         }
 
         function adicionarGasto() {
             const desc = document.getElementById('desc').value;
             const valor = parseFloat(document.getElementById('valor').value);
             const prioridade = document.getElementById('prioridade').value;
+
             if (desc && valor > 0) {
                 gastos.push({ desc, valor, prioridade, executado: false, id: Date.now() });
                 salvarEAtualizar();
@@ -154,19 +151,23 @@
         function darBaixa(id) {
             const index = gastos.findIndex(g => g.id === id);
             const item = gastos[index];
+
             if (item.executado) {
                 item.executado = false;
             } else {
-                const valorSugerido = item.valor.toFixed(2).replace('.', ',');
-                const valorPagoStr = prompt(`Pagar: ${item.desc}\nPlanejado: R$ ${valorSugerido}\nQuanto pagou?`, valorSugerido);
+                const valorPagoStr = prompt(`Confirmar pagamento: ${item.desc}\nPlanejado: R$ ${item.valor.toFixed(2)}`, item.valor.toFixed(2));
                 if (valorPagoStr === null) return;
                 const valorPago = parseFloat(valorPagoStr.replace(',', '.'));
                 if (isNaN(valorPago) || valorPago < 0) return;
+
                 if (valorPago < item.valor) {
                     const saldoRestante = item.valor - valorPago;
                     item.valor = valorPago;
                     item.executado = true;
-                    gastos.push({ desc: item.desc, valor: saldoRestante, prioridade: item.prioridade, executado: false, id: Date.now() + 1 });
+                    gastos.push({
+                        desc: item.desc, valor: saldoRestante, prioridade: item.prioridade,
+                        executado: false, id: Date.now() + 1
+                    });
                 } else {
                     item.valor = valorPago;
                     item.executado = true;
@@ -186,10 +187,12 @@
             const sDinheiro = parseFloat(document.getElementById('saldoDinheiro').value) || 0;
             const sCartao = parseFloat(document.getElementById('saldoCartao').value) || 0;
             const saldoTotalInicial = sDinheiro + sCartao;
+
             const listaElement = document.getElementById('listaGastos');
             listaElement.innerHTML = '';
             let planejado = 0, executadoTotal = 0;
 
+            // Ordenação
             gastos.sort((a, b) => {
                 if (a.executado === b.executado) {
                     const pesos = { "P0": 1, "P1": 2, "P2": 3 };
@@ -201,6 +204,7 @@
             gastos.forEach(g => {
                 planejado += g.valor;
                 if(g.executado) executadoTotal += g.valor;
+
                 const div = document.createElement('div');
                 div.className = `bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center border border-slate-100 ${g.prioridade.toLowerCase()} ${g.executado ? 'executado' : ''}`;
                 div.innerHTML = `
@@ -223,11 +227,16 @@
 
             const saldoPrevistoFinal = saldoTotalInicial - planejado;
             const saldoRealAgora = saldoTotalInicial - executadoTotal;
+
             document.getElementById('totalPlanejado').innerText = `R$ ${planejado.toFixed(0)}`;
             document.getElementById('totalExecutado').innerText = `R$ ${executadoTotal.toFixed(0)}`;
             document.getElementById('saldoFinal').innerText = `R$ ${saldoPrevistoFinal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
             document.getElementById('saldoReal').innerText = `R$ ${saldoRealAgora.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-            document.getElementById('statusCard').className = saldoPrevistoFinal < 0 ? "bg-red-600 text-white p-6 rounded-[2.5rem] shadow-xl mb-6 transition-all" : "bg-slate-900 text-white p-6 rounded-[2.5rem] shadow-xl mb-6 transition-all";
+            
+            const card = document.getElementById('statusCard');
+            card.className = saldoPrevistoFinal < 0 ? 
+                "bg-red-600 text-white p-6 rounded-[2.5rem] shadow-xl mb-6 transition-all duration-500" : 
+                "bg-slate-900 text-white p-6 rounded-[2.5rem] shadow-xl mb-6 transition-all duration-500";
         }
     </script>
 </body>
