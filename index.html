@@ -3,12 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financeiro: Fluxo Real</title>
+    <title>Financeiro Pro: Nuvem</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
     <style>
-        .p0 { border-left: 6px solid #ef4444; } /* Essencial */
-        .p1 { border-left: 6px solid #f59e0b; } /* Necessário */
-        .p2 { border-left: 6px solid #3b82f6; } /* Desejável */
+        .p0 { border-left: 6px solid #ef4444; }
+        .p1 { border-left: 6px solid #f59e0b; }
+        .p2 { border-left: 6px solid #3b82f6; }
         .executado { opacity: 0.5; background-color: #f8fafc !important; border-left-color: #cbd5e1 !important; }
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     </style>
@@ -17,35 +21,35 @@
 
     <div class="max-w-md mx-auto p-4">
         <header class="mb-6 text-center">
-            <h1 class="text-xl font-black uppercase tracking-tighter">Gestão de Fluxo Real</h1>
-            <p class="text-[10px] font-bold text-slate-400 uppercase">Planejado vs Executado</p>
+            <h1 class="text-xl font-black uppercase tracking-tighter">Fluxo Financeiro Real (Nuvem)</h1>
+            <p id="cloudStatus" class="text-[9px] font-bold text-amber-500 uppercase">Conectando à nuvem...</p>
         </header>
 
         <div class="grid grid-cols-2 gap-3 mb-4">
             <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-200">
                 <p class="text-[9px] text-slate-400 uppercase font-black">Em Dinheiro</p>
-                <input type="number" id="saldoDinheiro" oninput="salvarSaldos()" class="text-lg font-bold w-full outline-none text-emerald-600 bg-transparent" placeholder="0.00">
+                <input type="number" id="saldoDinheiro" oninput="salvarEAtualizar()" class="text-lg font-bold w-full outline-none text-emerald-600 bg-transparent">
             </div>
             <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-200">
                 <p class="text-[9px] text-slate-400 uppercase font-black">Limite Cartão</p>
-                <input type="number" id="saldoCartao" oninput="salvarSaldos()" class="text-lg font-bold w-full outline-none text-blue-600 bg-transparent" placeholder="0.00">
+                <input type="number" id="saldoCartao" oninput="salvarEAtualizar()" class="text-lg font-bold w-full outline-none text-blue-600 bg-transparent">
             </div>
         </div>
 
         <div id="statusCard" class="bg-slate-900 text-white p-6 rounded-[2rem] shadow-xl mb-6 transition-all duration-500">
             <div class="flex justify-between items-end mb-4">
                 <div>
-                    <p class="text-[10px] uppercase opacity-60 font-bold tracking-widest">Saldo Real Atual</p>
+                    <p class="text-[10px] uppercase opacity-60 font-bold tracking-widest">Saldo Real Agora</p>
                     <h2 id="saldoReal" class="text-3xl font-black text-emerald-400">R$ 0,00</h2>
                 </div>
                 <div class="text-right">
-                    <p class="text-[10px] uppercase opacity-60 font-bold tracking-widest">Previsão Final</p>
+                    <p class="text-[10px] uppercase opacity-60 font-bold tracking-widest">Saldo Final Previsto</p>
                     <h2 id="saldoFinal" class="text-xl font-black italic">R$ 0,00</h2>
                 </div>
             </div>
             <div class="flex justify-between text-[10px] font-black uppercase border-t border-white/10 pt-4">
-                <span>Total Plano: <span id="totalPlanejado">R$ 0</span></span>
-                <span>Total Pago: <span id="totalExecutado" class="text-emerald-400">R$ 0</span></span>
+                <span>Planejado: <span id="totalPlanejado">R$ 0</span></span>
+                <span>Pago: <span id="totalExecutado" class="text-emerald-400">R$ 0</span></span>
             </div>
         </div>
 
@@ -60,29 +64,72 @@
                 </select>
             </div>
             <button onclick="adicionarGasto()" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-xs uppercase shadow-lg active:scale-95 transition-all">
-                Incluir no Planejamento
+                Lançar no Planejamento
             </button>
         </div>
 
-        <div class="flex justify-between items-center mb-4 px-2">
-            <h3 class="font-black text-slate-400 uppercase text-[10px] tracking-widest">Pendentes e Pagos</h3>
-            <button onclick="limparTudo()" class="text-[9px] text-red-400 font-bold uppercase underline">Zerar Lista</button>
-        </div>
-        
         <div id="listaGastos" class="space-y-3"></div>
     </div>
 
     <script>
-        let gastos = JSON.parse(localStorage.getItem('meusGastos')) || [];
-        
-        // Inicialização
-        document.getElementById('saldoDinheiro').value = localStorage.getItem('s_dinheiro') || "";
-        document.getElementById('saldoCartao').value = localStorage.getItem('s_cartao') || "";
+
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "firebase/app";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+               apiKey: "AIzaSyD8w635i-gDPR0tInGyvO82L6rfz5a9R74",
+              authDomain: "controle-de-gastos-83bff.firebaseapp.com",
+              databaseURL: "https://controle-de-gastos-83bff-default-rtdb.firebaseio.com",
+              projectId: "controle-de-gastos-83bff",
+              storageBucket: "controle-de-gastos-83bff.firebasestorage.app",
+              messagingSenderId: "206236011422",
+              appId: "1:206236011422:web:83554e33144e0b7e99e48f"
+            };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const refFinanceiro = db.ref('meu_financeiro');
+
+        let gastos = [];
+
+        // ESCUTAR MUDANÇAS NA NUVEM (Tempo Real)
+        refFinanceiro.on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                gastos = data.gastos || [];
+                
+                // Só atualiza os campos de saldo se o usuário não estiver digitando neles agora
+                if (document.activeElement !== document.getElementById('saldoDinheiro')) {
+                    document.getElementById('saldoDinheiro').value = data.s_dinheiro || "";
+                }
+                if (document.activeElement !== document.getElementById('saldoCartao')) {
+                    document.getElementById('saldoCartao').value = data.s_cartao || "";
+                }
+                
+                document.getElementById('cloudStatus').innerText = "☁️ Sincronizado";
+                document.getElementById('cloudStatus').className = "text-[9px] font-bold text-emerald-500 uppercase";
+                atualizarInterface();
+            } else {
+                document.getElementById('cloudStatus').innerText = "☁️ Nuvem Vazia (Inicie seu plano)";
+            }
+        });
+
+        function salvarEAtualizar() {
+            document.getElementById('cloudStatus').innerText = "⏳ Salvando...";
+            db.ref('meu_financeiro').set({
+                gastos: gastos,
+                s_dinheiro: document.getElementById('saldoDinheiro').value,
+                s_cartao: document.getElementById('saldoCartao').value
+            });
+        }
 
         function adicionarGasto() {
             const desc = document.getElementById('desc').value;
-            const valorInput = document.getElementById('valor').value;
-            const valor = parseFloat(valorInput);
+            const valor = parseFloat(document.getElementById('valor').value);
             const prioridade = document.getElementById('prioridade').value;
 
             if (desc && valor > 0) {
@@ -97,79 +144,41 @@
             const index = gastos.findIndex(g => g.id === id);
             const item = gastos[index];
 
-            // Se clicar num item já pago, ele apenas volta a ser planejado
             if (item.executado) {
                 item.executado = false;
-                salvarEAtualizar();
-                return;
-            }
-
-            // Se for planejado, abre o prompt para confirmar valor real
-            const valorSugerido = item.valor.toFixed(2).replace('.', ',');
-            const valorPagoStr = prompt(`Confirmar pagamento: ${item.desc}\nValor planejado: R$ ${valorSugerido}\n\nQuanto você pagou de fato?`, valorSugerido);
-            
-            if (valorPagoStr === null) return; 
-
-            const valorPago = parseFloat(valorPagoStr.replace(',', '.'));
-            
-            if (isNaN(valorPago) || valorPago < 0) {
-                alert("Valor inválido.");
-                return;
-            }
-
-            if (valorPago < item.valor) {
-                // LOGICA DE DILUIÇÃO
-                const saldoRestante = item.valor - valorPago;
-                
-                // 1. Atualiza o item atual com o valor real pago e marca como feito
-                item.valor = valorPago;
-                item.executado = true;
-
-                // 2. Cria o novo item planejado com a diferença
-                gastos.push({
-                    desc: item.desc,
-                    valor: saldoRestante,
-                    prioridade: item.prioridade,
-                    executado: false,
-                    id: Date.now() + 1
-                });
-                
-                alert(`Pago: R$ ${valorPago.toFixed(2)}. Um saldo de R$ ${saldoRestante.toFixed(2)} foi mantido no planejamento.`);
             } else {
-                // Pago integral ou valor maior
-                item.valor = valorPago;
-                item.executado = true;
-            }
+                const valorSugerido = item.valor.toFixed(2).replace('.', ',');
+                const valorPagoStr = prompt(`Confirmar pagamento: ${item.desc}\nValor planejado: R$ ${valorSugerido}\n\nQuanto você pagou de fato?`, valorSugerido);
+                
+                if (valorPagoStr === null) return; 
+                const valorPago = parseFloat(valorPagoStr.replace(',', '.'));
+                
+                if (isNaN(valorPago) || valorPago < 0) return;
 
+                if (valorPago < item.valor) {
+                    const saldoRestante = item.valor - valorPago;
+                    item.valor = valorPago;
+                    item.executado = true;
+                    gastos.push({
+                        desc: item.desc, valor: saldoRestante, prioridade: item.prioridade, 
+                        executado: false, id: Date.now() + 1
+                    });
+                } else {
+                    item.valor = valorPago;
+                    item.executado = true;
+                }
+            }
             salvarEAtualizar();
         }
 
         function deletarGasto(id) {
-            if(confirm("Excluir item da lista?")) {
+            if(confirm("Excluir item?")) {
                 gastos = gastos.filter(g => g.id !== id);
                 salvarEAtualizar();
             }
         }
 
-        function limparTudo() {
-            if(confirm("Deseja apagar todos os dados?")) {
-                gastos = [];
-                salvarEAtualizar();
-            }
-        }
-
-        function salvarSaldos() {
-            localStorage.setItem('s_dinheiro', document.getElementById('saldoDinheiro').value);
-            localStorage.setItem('s_cartao', document.getElementById('saldoCartao').value);
-            atualizarGeral();
-        }
-
-        function salvarEAtualizar() {
-            localStorage.setItem('meusGastos', JSON.stringify(gastos));
-            salvarSaldos();
-        }
-
-        function atualizarGeral() {
+        function atualizarInterface() {
             const sDinheiro = parseFloat(document.getElementById('saldoDinheiro').value) || 0;
             const sCartao = parseFloat(document.getElementById('saldoCartao').value) || 0;
             const saldoTotalInicial = sDinheiro + sCartao;
@@ -180,7 +189,6 @@
             let planejado = 0;
             let executadoTotal = 0;
 
-            // Ordenar: Pendentes no topo por prioridade, Executados embaixo
             gastos.sort((a, b) => {
                 if (a.executado === b.executado) {
                     const pesos = { "P0": 1, "P1": 2, "P2": 3 };
@@ -194,12 +202,11 @@
                 if(g.executado) executadoTotal += g.valor;
 
                 const div = document.createElement('div');
-                div.className = `bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center transition-all border border-slate-100 ${g.prioridade.toLowerCase()} ${g.executado ? 'executado' : ''}`;
-                
+                div.className = `bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center border border-slate-100 ${g.prioridade.toLowerCase()} ${g.executado ? 'executado' : ''}`;
                 div.innerHTML = `
                     <div class="flex items-center gap-4">
-                        <button onclick="darBaixa(${g.id})" class="w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${g.executado ? 'bg-emerald-500 border-emerald-500' : 'border-slate-200'}">
-                            ${g.executado ? '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>' : ''}
+                        <button onclick="darBaixa(${g.id})" class="w-8 h-8 rounded-full border-2 flex items-center justify-center ${g.executado ? 'bg-emerald-500 border-emerald-500' : 'border-slate-200'}">
+                            ${g.executado ? '<svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>' : ''}
                         </button>
                         <div>
                             <p class="font-bold text-slate-800 text-sm ${g.executado ? 'line-through' : ''}">${g.desc}</p>
@@ -223,14 +230,10 @@
             document.getElementById('saldoReal').innerText = `R$ ${saldoRealAgora.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
             
             const cardStatus = document.getElementById('statusCard');
-            if (saldoPrevistoFinal < 0) {
-                cardStatus.className = "bg-red-600 text-white p-6 rounded-[2.5rem] shadow-xl mb-6 transition-all";
-            } else {
-                cardStatus.className = "bg-slate-900 text-white p-6 rounded-[2.5rem] shadow-xl mb-6 transition-all";
-            }
+            cardStatus.className = saldoPrevistoFinal < 0 ? 
+                "bg-red-600 text-white p-6 rounded-[2.5rem] shadow-xl mb-6 transition-all" : 
+                "bg-slate-900 text-white p-6 rounded-[2.5rem] shadow-xl mb-6 transition-all";
         }
-
-        atualizarGeral();
     </script>
 </body>
 </html>
