@@ -22,7 +22,7 @@
     <div class="max-w-md mx-auto p-4">
         <header class="mb-6 text-center">
             <h1 class="text-xl font-black uppercase tracking-tighter">Fluxo Financeiro Real (Nuvem)</h1>
-            <p id="cloudStatus" class="text-[9px] font-bold text-amber-500 uppercase">Conectando à nuvem...</p>
+            <p id="cloudStatus" class="text-[9px] font-bold text-amber-500 uppercase italic">Iniciando...</p>
         </header>
 
         <div class="grid grid-cols-2 gap-3 mb-4">
@@ -72,76 +72,67 @@
     </div>
 
     <script>
+        // 1. Definição das configurações primeiro
+        const firebaseConfig = {
+            apiKey: "AIzaSyD8w635i-gDPR0tInGyvO82L6rfz5a9R74",
+            authDomain: "controle-de-gastos-83bff.firebaseapp.com",
+            databaseURL: "https://controle-de-gastos-83bff-default-rtdb.firebaseio.com",
+            projectId: "controle-de-gastos-83bff",
+            storageBucket: "controle-de-gastos-83bff.firebasestorage.app",
+            messagingSenderId: "206236011422",
+            appId: "1:206236011422:web:83554e33144e0b7e99e48f"
+        };
 
-       // Inicializar Firebase
+        let db, refFinanceiro, gastos = [];
+
+        // 2. Inicialização com tratamento de erro
         try {
             firebase.initializeApp(firebaseConfig);
-            const db = firebase.database();
-            const refFinanceiro = db.ref('meu_financeiro');
+            db = firebase.database();
+            refFinanceiro = db.ref('meu_financeiro');
+            
+            console.log("Firebase inicializado.");
+            document.getElementById('cloudStatus').innerText = "☁️ Conectando...";
 
-            // Teste de conexão imediato
+            // Monitor de conexão
             db.ref(".info/connected").on("value", (snap) => {
                 if (snap.val() === true) {
-                    console.log("Conectado ao Firebase!");
+                    document.getElementById('cloudStatus').innerText = "☁️ Sincronizado";
+                    document.getElementById('cloudStatus').className = "text-[9px] font-bold text-emerald-500 uppercase";
                 } else {
-                    console.log("Tentando conectar...");
+                    document.getElementById('cloudStatus').innerText = "❌ Offline";
+                    document.getElementById('cloudStatus').className = "text-[9px] font-bold text-red-500 uppercase";
                 }
             });
 
+            // Escutar dados
             refFinanceiro.on('value', (snapshot) => {
                 const data = snapshot.val();
-                console.log("Dados recebidos:", data);
-                // ... resto do seu código de atualização
+                if (data) {
+                    gastos = data.gastos || [];
+                    if (document.activeElement !== document.getElementById('saldoDinheiro')) {
+                        document.getElementById('saldoDinheiro').value = data.s_dinheiro || "";
+                    }
+                    if (document.activeElement !== document.getElementById('saldoCartao')) {
+                        document.getElementById('saldoCartao').value = data.s_cartao || "";
+                    }
+                    atualizarInterface();
+                } else {
+                    document.getElementById('cloudStatus').innerText = "☁️ Nuvem Vazia";
+                }
             }, (error) => {
-                alert("Erro de permissão ou conexão: " + error.message);
+                alert("Erro Firebase: " + error.message);
             });
+
         } catch (e) {
-            alert("Erro na configuração do Firebase: " + e.message);
+            alert("Erro ao iniciar: " + e.message);
         }
 
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-               apiKey: "AIzaSyD8w635i-gDPR0tInGyvO82L6rfz5a9R74",
-              authDomain: "controle-de-gastos-83bff.firebaseapp.com",
-              databaseURL: "https://controle-de-gastos-83bff-default-rtdb.firebaseio.com",
-              projectId: "controle-de-gastos-83bff",
-              storageBucket: "controle-de-gastos-83bff.firebasestorage.app",
-              messagingSenderId: "206236011422",
-              appId: "1:206236011422:web:83554e33144e0b7e99e48f"
-            };
-
-        // Inicializar Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        const refFinanceiro = db.ref('meu_financeiro');
-
-        let gastos = [];
-
-        // ESCUTAR MUDANÇAS NA NUVEM (Tempo Real)
-        refFinanceiro.on('value', (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                gastos = data.gastos || [];
-                
-                // Só atualiza os campos de saldo se o usuário não estiver digitando neles agora
-                if (document.activeElement !== document.getElementById('saldoDinheiro')) {
-                    document.getElementById('saldoDinheiro').value = data.s_dinheiro || "";
-                }
-                if (document.activeElement !== document.getElementById('saldoCartao')) {
-                    document.getElementById('saldoCartao').value = data.s_cartao || "";
-                }
-                
-                document.getElementById('cloudStatus').innerText = "☁️ Sincronizado";
-                document.getElementById('cloudStatus').className = "text-[9px] font-bold text-emerald-500 uppercase";
-                atualizarInterface();
-            } else {
-                document.getElementById('cloudStatus').innerText = "☁️ Nuvem Vazia (Inicie seu plano)";
-            }
-        });
-
+        // 3. Funções de suporte
         function salvarEAtualizar() {
+            if(!refFinanceiro) return;
             document.getElementById('cloudStatus').innerText = "⏳ Salvando...";
-            db.ref('meu_financeiro').set({
+            refFinanceiro.set({
                 gastos: gastos,
                 s_dinheiro: document.getElementById('saldoDinheiro').value,
                 s_cartao: document.getElementById('saldoCartao').value
@@ -152,7 +143,6 @@
             const desc = document.getElementById('desc').value;
             const valor = parseFloat(document.getElementById('valor').value);
             const prioridade = document.getElementById('prioridade').value;
-
             if (desc && valor > 0) {
                 gastos.push({ desc, valor, prioridade, executado: false, id: Date.now() });
                 salvarEAtualizar();
@@ -164,26 +154,19 @@
         function darBaixa(id) {
             const index = gastos.findIndex(g => g.id === id);
             const item = gastos[index];
-
             if (item.executado) {
                 item.executado = false;
             } else {
                 const valorSugerido = item.valor.toFixed(2).replace('.', ',');
-                const valorPagoStr = prompt(`Confirmar pagamento: ${item.desc}\nValor planejado: R$ ${valorSugerido}\n\nQuanto você pagou de fato?`, valorSugerido);
-                
-                if (valorPagoStr === null) return; 
+                const valorPagoStr = prompt(`Pagar: ${item.desc}\nPlanejado: R$ ${valorSugerido}\nQuanto pagou?`, valorSugerido);
+                if (valorPagoStr === null) return;
                 const valorPago = parseFloat(valorPagoStr.replace(',', '.'));
-                
                 if (isNaN(valorPago) || valorPago < 0) return;
-
                 if (valorPago < item.valor) {
                     const saldoRestante = item.valor - valorPago;
                     item.valor = valorPago;
                     item.executado = true;
-                    gastos.push({
-                        desc: item.desc, valor: saldoRestante, prioridade: item.prioridade, 
-                        executado: false, id: Date.now() + 1
-                    });
+                    gastos.push({ desc: item.desc, valor: saldoRestante, prioridade: item.prioridade, executado: false, id: Date.now() + 1 });
                 } else {
                     item.valor = valorPago;
                     item.executado = true;
@@ -203,12 +186,9 @@
             const sDinheiro = parseFloat(document.getElementById('saldoDinheiro').value) || 0;
             const sCartao = parseFloat(document.getElementById('saldoCartao').value) || 0;
             const saldoTotalInicial = sDinheiro + sCartao;
-
             const listaElement = document.getElementById('listaGastos');
             listaElement.innerHTML = '';
-
-            let planejado = 0;
-            let executadoTotal = 0;
+            let planejado = 0, executadoTotal = 0;
 
             gastos.sort((a, b) => {
                 if (a.executado === b.executado) {
@@ -221,7 +201,6 @@
             gastos.forEach(g => {
                 planejado += g.valor;
                 if(g.executado) executadoTotal += g.valor;
-
                 const div = document.createElement('div');
                 div.className = `bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center border border-slate-100 ${g.prioridade.toLowerCase()} ${g.executado ? 'executado' : ''}`;
                 div.innerHTML = `
@@ -244,16 +223,11 @@
 
             const saldoPrevistoFinal = saldoTotalInicial - planejado;
             const saldoRealAgora = saldoTotalInicial - executadoTotal;
-            
             document.getElementById('totalPlanejado').innerText = `R$ ${planejado.toFixed(0)}`;
             document.getElementById('totalExecutado').innerText = `R$ ${executadoTotal.toFixed(0)}`;
             document.getElementById('saldoFinal').innerText = `R$ ${saldoPrevistoFinal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
             document.getElementById('saldoReal').innerText = `R$ ${saldoRealAgora.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-            
-            const cardStatus = document.getElementById('statusCard');
-            cardStatus.className = saldoPrevistoFinal < 0 ? 
-                "bg-red-600 text-white p-6 rounded-[2.5rem] shadow-xl mb-6 transition-all" : 
-                "bg-slate-900 text-white p-6 rounded-[2.5rem] shadow-xl mb-6 transition-all";
+            document.getElementById('statusCard').className = saldoPrevistoFinal < 0 ? "bg-red-600 text-white p-6 rounded-[2.5rem] shadow-xl mb-6 transition-all" : "bg-slate-900 text-white p-6 rounded-[2.5rem] shadow-xl mb-6 transition-all";
         }
     </script>
 </body>
