@@ -3,11 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financeiro Cloud: 2026-2030</title>
+    <title>Financeiro Cloud: Itens e Subitens</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
+    <style>
+        .p0 { border-left: 6px solid #ef4444; }
+        .p1 { border-left: 6px solid #f59e0b; }
+        .p2 { border-left: 6px solid #3b82f6; }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen pb-10 font-sans text-slate-900">
+
+    <div class="max-w-md mx-auto p-4">
+        <div class="flex justify-between items-center bg-white p-2 rounded-2xl shadow-sm mb-4 border border-slate-100">
+            <select id="selectMes" onchange="mudarPeriodo()" class="bg-transparent font-black text-xs uppercase outline-none p-2">
+                <option value="01">Janeiro</option><option value="02">Fevereiro</option><option value="03">Março</option>
+                <option value="04">Abril</option><option value="05">Maio</option><option value="06">Junho</option>
+                <option value="07">Julho</option><option value="08">Agosto</option><option value="09">Setembro</option>
+                <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
+            </select>
+            <select id="selectAno" onchange="mudarPeriodo()" class="bg-transparent font-black text-xs outline-none p-2">
+                <option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option>
+            </select>
+            <p id="cloudStatus" class="text-[8px] font-bold text-emerald-500 pr-2">☁️ Online</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 mb-4 text-center">
+            <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-200">
+                <p class="text-[9px] text-slate-400 uppercase font-black">Dinheiro 💵</p>
+                <input type="number" id="saldoDinheiro" oninput="window.salvarEAtualizar()" class="text-lg font-bold w-full outline-none text-emerald-600 bg-transparent text-center" placeholder="0.00">
+            </div>
+            <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-200">
+                <p class="text-[9px] text-slate-400 uppercase font-black">Cartão 💳</p>
+                <input type="number" id="saldoCartao" oninput="window.salvarEAtualizar()" class="text-lg font-bold w-full outline-none text-blue-600 bg-transparent text-center" placeholder="0.00">
+            </div>
+        </div>
+
+        <div id="statusCard" class="bg-slate-900 text-white p-6 rounded-[2.5rem] shadow-xl mb-6">
+            <div class="grid grid-cols-2 gap-4 text-center mb-4">
+                <div>
+                    <p class="text-[10px] uppercase opacity-60 font-bold tracking-widest mb-1">Saldo Real</p>
+                    <h2 id="saldoReal" class="text-xl font-black text-emerald-400 leading-none">R$ 0,00</h2>
+                </div>
+                <div class="border-l border-white/10">
+                    <p class="text-[10px] uppercase opacity-60 font-bold tracking-widest mb-1">Previsão Final</p>
+                    <h2 id="saldoFinal" class="text-xl font-black text-cyan-400 leading-none">R$ 0,00</h2>
+                </div>
+            </div>
+            <div class="text-center border-t border-white/10 pt-4">
+                <p class="text-[10px] font-black uppercase opacity-40">Planejado Total: <span id="totalPlanejado">R$ 0</span></p>
+            </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl shadow-sm mb-4 border border-slate-100">
+            <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-3">1. Cadastrar Item Planejado</h4>
+            <div class="grid grid-cols-4 gap-2 mb-3">
+                <input type="text" id="desc" placeholder="Ex: Supermercado" class="col-span-2 border-b-2 p-2 outline-none text-sm focus:border-indigo-500">
+                <input type="number" id="valor" placeholder="R$" class="col-span-1 border-b-2 p-2 outline-none text-sm focus:border-indigo-500">
+                <select id="prioridade" class="col-span-1 text-[10px] font-black border-b-2 bg-transparent outline-none uppercase">
+                    <option value="P0">P0</option><option value="P1">P1</option><option value="P2">P2</option>
+                </select>
+            </div>
+            <button onclick="window.adicionarGasto()" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-black text-xs uppercase shadow-lg active:scale-95 transition-all">
+                Fixar no Planejamento
+            </button>
+        </div>
+
+        <div class="bg-emerald-50/60 border border-emerald-100 p-5 rounded-2xl shadow-sm mb-8">
+            <h4 class="text-[10px] font-black text-emerald-700 uppercase tracking-wider mb-3">2. Registrar Gasto Real (Baixa)</h4>
+            <div class="grid grid-cols-2 gap-2 mb-2">
+                <input type="text" id="subitemDesc" placeholder="O que comprou? (Subitem)" class="border-b-2 bg-transparent p-2 outline-none text-sm focus:border-emerald-500">
+                <input type="number" id="subitemValor" placeholder="Valor Pago R$" class="border-b-2 bg-transparent p-2 outline-none text-sm focus:border-emerald-500">
+            </div>
+            <div class="grid grid-cols-2 gap-2 mb-3">
+                <select id="subitemRelacao" class="text-xs font-bold border-b-2 bg-transparent p-2 outline-none">
+                    <option value="">Abater de qual item? ...</option>
+                </select>
+                <select id="subitemVia" class="text-xs font-bold border-b-2 bg-transparent p-2 outline-none text-emerald-800">
+                    <option value="dinheiro">Paguei em Dinheiro 💵</option>
+                    <option value="cartao">Paguei no Cartão 💳</option>
+                </select>
+            </div>
+            <button onclick="window.adicionarSubitem()" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-black text-xs uppercase shadow-md active:scale-95 transition-all">
+                Confirmar Pagamento e Abater
+            </button>
+        </div>
+
+        <h3 class="font-black text-slate-400 uppercase text-[10px] tracking-widest mb-3 px-2">Estrutura de Gastos do Mês</h3>
+        <div id="listaGastos" class="space-y-4"></div>
+    </div>
 
     <script>
         const firebaseConfig = {
@@ -27,19 +115,8 @@
             const agora = new Date();
             mesAtual = (agora.getMonth() + 1).toString().padStart(2, '0');
             anoAtual = agora.getFullYear().toString();
-            
-            // Define os valores nos selects (se o ano atual for > 2030, ele precisará ser adicionado manualmente depois)
             document.getElementById('selectMes').value = mesAtual;
-            const selectAno = document.getElementById('selectAno');
-            
-            // Garante que se o ano atual estiver na lista, ele seja selecionado
-            if ([...selectAno.options].some(opt => opt.value === anoAtual)) {
-                selectAno.value = anoAtual;
-            } else {
-                selectAno.value = "2026"; // Fallback para o início da sua nova lista
-                anoAtual = "2026";
-            }
-            
+            document.getElementById('selectAno').value = anoAtual;
             conectarAoMes();
         }
 
@@ -52,13 +129,14 @@
         function conectarAoMes() {
             if (!db) return;
             db.ref(`meu_financeiro/${anoAtual}/${mesAtual}`).off();
-            const refMes = db.ref(`meu_financeiro/${anoAtual}/${mesAtual}`);
-            refMes.on('value', (snapshot) => {
+            db.ref(`meu_financeiro/${anoAtual}/${mesAtual}`).on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
                     gastos = data.gastos || [];
-                    document.getElementById('saldoDinheiro').value = data.s_dinheiro || "";
-                    document.getElementById('saldoCartao').value = data.s_cartao || "";
+                    if (document.activeElement !== document.getElementById('saldoDinheiro'))
+                        document.getElementById('saldoDinheiro').value = data.s_dinheiro || "";
+                    if (document.activeElement !== document.getElementById('saldoCartao'))
+                        document.getElementById('saldoCartao').value = data.s_cartao || "";
                 } else {
                     gastos = [];
                     document.getElementById('saldoDinheiro').value = "";
@@ -83,10 +161,48 @@
             const v = parseFloat(document.getElementById('valor').value);
             const p = document.getElementById('prioridade').value;
             if (d && v > 0) {
-                gastos.push({ desc: d, valor: v, prioridade: p, executado: false, id: Date.now() });
+                gastos.push({ desc: d, valor: v, prioridade: p, executado: false, subitens: [], id: Date.now() });
                 window.salvarEAtualizar();
                 document.getElementById('desc').value = '';
                 document.getElementById('valor').value = '';
+            }
+        };
+
+        window.adicionarSubitem = function() {
+            const sDesc = document.getElementById('subitemDesc').value;
+            const sValor = parseFloat(document.getElementById('subitemValor').value);
+            const itemId = document.getElementById('subitemRelacao').value;
+            const sVia = document.getElementById('subitemVia').value;
+
+            if (!sDesc || isNaN(sValor) || sValor <= 0 || !itemId) {
+                alert("Preencha todos os campos do gasto real.");
+                return;
+            }
+
+            const idx = gastos.findIndex(g => g.id == itemId);
+            if (idx !== -1) {
+                if (!gastos[idx].subitens) gastos[idx].subitens = [];
+                
+                // Registra o subitem
+                gastos[idx].subitens.push({
+                    desc: sDesc,
+                    valor: sValor,
+                    via: sVia,
+                    id: Date.now()
+                });
+
+                // Abatimento inteligente no valor planejado restante
+                if (sValor < gastos[idx].valor) {
+                    gastos[idx].valor = gastos[idx].valor - sValor;
+                } else {
+                    gastos[idx].valor = 0;
+                    gastos[idx].executado = true;
+                }
+
+                window.salvarEAtualizar();
+                document.getElementById('subitemDesc').value = '';
+                document.getElementById('subitemValor').value = '';
+                document.getElementById('subitemRelacao').value = '';
             }
         };
 
@@ -101,35 +217,26 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        window.darBaixa = function(id) {
-            const idx = gastos.findIndex(g => g.id === id);
-            const item = gastos[idx];
-            if (item.executado) {
-                item.executado = false;
-            } else {
-                const vSug = item.valor.toFixed(2).replace('.', ',');
-                const vPagoStr = prompt(`Confirmar pago: ${item.desc}\nPlanejado: R$ ${vSug}`, vSug);
-                if (vPagoStr === null) return;
-                const vPago = parseFloat(vPagoStr.replace(',', '.'));
-                if (isNaN(vPago) || vPago < 0) return;
-
-                if (vPago < item.valor) {
-                    const resto = item.valor - vPago;
-                    item.valor = vPago;
-                    item.executado = true;
-                    gastos.push({ desc: item.desc, valor: resto, prioridade: item.prioridade, executado: false, id: Date.now() + 1 });
-                } else {
-                    item.valor = vPago;
-                    item.executado = true;
-                }
-            }
-            window.salvarEAtualizar();
-        };
-
         window.deletarGasto = function(id) {
-            if (confirm("Excluir item?")) {
+            if (confirm("Excluir item planejado e todos os seus subitens?")) {
                 gastos = gastos.filter(g => g.id !== id);
                 window.salvarEAtualizar();
+            }
+        };
+
+        window.deletarSubitem = function(itemId, subitemId) {
+            if (confirm("Estornar este gasto? O valor retornará ao planejado.")) {
+                const itemIdx = gastos.findIndex(g => g.id == itemId);
+                if (itemIdx !== -1) {
+                    const subIdx = gastos[itemIdx].subitens.findIndex(s => s.id == subitemId);
+                    const valorEstorno = gastos[itemIdx].subitens[subIdx].valor;
+                    
+                    gastos[itemIdx].valor += valorEstorno;
+                    gastos[itemIdx].executado = false;
+                    gastos[itemIdx].subitens.splice(subIdx, 1);
+                    
+                    window.salvarEAtualizar();
+                }
             }
         };
 
@@ -137,43 +244,83 @@
             const sD = parseFloat(document.getElementById('saldoDinheiro').value) || 0;
             const sC = parseFloat(document.getElementById('saldoCartao').value) || 0;
             const totalInic = sD + sC;
+            
             const lista = document.getElementById('listaGastos');
+            const selectRelacao = document.getElementById('subitemRelacao');
+            
             lista.innerHTML = '';
-            let plan = 0, exec = 0;
+            // Reseta combo de relações mantendo apenas a opção padrão
+            selectRelacao.innerHTML = '<option value="">Abater de qual item? ...</option>';
+            
+            let planTotal = 0, execTotal = 0;
 
             const pesos = { "P0": 1, "P1": 2, "P2": 3 };
             gastos.sort((a, b) => a.executado - b.executado || pesos[a.prioridade] - pesos[b.prioridade]);
 
             gastos.forEach(g => {
-                plan += g.valor;
-                if (g.executado) exec += g.valor;
+                let subitensAcumulado = 0;
+                let htmlSubitens = '';
+
+                // Alimenta o Select de Baixas com itens ainda não totalmente executados
+                if (!g.executado) {
+                    const opt = document.createElement('option');
+                    opt.value = g.id;
+                    opt.innerText = `${g.desc} (R$ ${g.valor.toFixed(2)})`;
+                    selectRelacao.appendChild(opt);
+                }
+
+                // Processa os subitens (gastos reais) vinculados
+                if (g.subitens && g.subitens.length > 0) {
+                    g.subitens.forEach(s => {
+                        subitensAcumulado += s.valor;
+                        const iconeVia = s.via === 'dinheiro' ? '💵' : '💳';
+                        htmlSubitens += `
+                            <div class="flex justify-between items-center text-xs bg-slate-50 p-2 rounded-lg border border-dashed border-slate-200 pl-3">
+                                <span class="text-slate-600 font-medium">${iconeVia} ${s.desc}</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-slate-700">R$ ${s.valor.toFixed(2)}</span>
+                                    <button onclick="window.deletarSubitem(${g.id}, ${s.id})" class="text-red-300 font-black hover:text-red-500 px-1">×</button>
+                                </div>
+                            </div>`;
+                    });
+                }
+
+                // Lógica retrocompatível: Se o item antigo foi marcado como feito mas não tem subitens
+                if (g.executado && subitensAcumulado === 0) {
+                    subitensAcumulado = g.valor;
+                }
+
+                planTotal += g.valor + subitensAcumulado;
+                execTotal += subitensAcumulado;
+
                 const div = document.createElement('div');
-                div.className = `bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center border border-slate-100 ${g.prioridade.toLowerCase()} ${g.executado ? 'opacity-40' : ''}`;
+                div.className = `bg-white p-4 rounded-2xl shadow-sm border border-slate-100 ${g.prioridade.toLowerCase()} ${g.executado ? 'opacity-50' : ''}`;
+                
                 const btnEditar = !g.executado ? `<button onclick="window.editarGasto(${g.id})" class="text-[8px] font-bold uppercase text-indigo-400 mr-2">Editar</button>` : '';
 
                 div.innerHTML = `
-                    <div class="flex items-center gap-4">
-                        <button onclick="window.darBaixa(${g.id})" class="w-8 h-8 rounded-full border-2 flex items-center justify-center ${g.executado ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-200'}">
-                            ${g.executado ? '✓' : ''}
-                        </button>
+                    <div class="flex justify-between items-start mb-2">
                         <div>
-                            <p class="font-bold text-slate-800 text-sm ${g.executado ? 'line-through' : ''}">${g.desc}</p>
-                            <p class="text-[8px] font-black uppercase text-slate-400 tracking-tighter">${g.prioridade}</p>
+                            <p class="font-bold text-slate-800 text-sm">${g.desc}</p>
+                            <p class="text-[8px] font-black uppercase text-slate-400 tracking-tighter">${g.prioridade} • Resta Planejado: R$ ${g.valor.toFixed(2)}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] font-black text-emerald-600">Pago: R$ ${subitensAcumulado.toFixed(2)}</p>
+                            <div class="flex justify-end mt-1">${btnEditar}<button onclick="window.deletarGasto(${g.id})" class="text-[8px] font-bold uppercase text-slate-300">Excluir</button></div>
                         </div>
                     </div>
-                    <div class="text-right">
-                        <p class="font-black text-slate-900 text-sm">R$ ${g.valor.toFixed(2)}</p>
-                        <div class="flex justify-end">${btnEditar}<button onclick="window.deletarGasto(${g.id})" class="text-[8px] font-bold uppercase text-slate-300">Excluir</button></div>
+                    <div class="space-y-1 mt-2 pl-2 border-l-2 border-slate-100">
+                        ${htmlSubitens}
                     </div>`;
                 lista.appendChild(div);
             });
 
-            const saldoPrevisto = totalInic - plan;
-            const saldoReal = totalInic - exec;
+            const saldoPrevisto = totalInic - planTotal;
+            const saldoReal = totalInic - execTotal;
 
             document.getElementById('saldoReal').innerText = `R$ ${saldoReal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
             document.getElementById('saldoFinal').innerText = `R$ ${saldoPrevisto.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-            document.getElementById('totalPlanejado').innerText = `R$ ${plan.toFixed(0)}`;
+            document.getElementById('totalPlanejado').innerText = `R$ ${planTotal.toFixed(0)}`;
             
             const card = document.getElementById('statusCard');
             card.className = saldoPrevisto < 0 ? "bg-red-600 text-white p-6 rounded-[2.5rem] shadow-xl mb-6 transition-all duration-500" : "bg-slate-900 text-white p-6 rounded-[2.5rem] shadow-xl mb-6 transition-all duration-500";
@@ -183,76 +330,13 @@
             firebase.initializeApp(firebaseConfig);
             db = firebase.database();
             inicializarPeriodo();
+            
+            db.ref(".info/connected").on("value", (snap) => {
+                const label = document.getElementById('cloudStatus');
+                label.innerText = snap.val() ? "☁️ Online" : "⚠️ Offline";
+                label.className = snap.val() ? "text-[10px] font-bold text-emerald-500 uppercase tracking-widest" : "text-[10px] font-bold text-amber-500 uppercase tracking-widest";
+            });
         };
     </script>
-
-    <style>
-        .p0 { border-left: 6px solid #ef4444; }
-        .p1 { border-left: 6px solid #f59e0b; }
-        .p2 { border-left: 6px solid #3b82f6; }
-        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-    </style>
-</head>
-<body class="bg-slate-50 min-h-screen pb-10 font-sans text-slate-900">
-
-    <div class="max-w-md mx-auto p-4">
-        <div class="flex justify-between items-center bg-white p-2 rounded-2xl shadow-sm mb-4 border border-slate-100">
-            <select id="selectMes" onchange="mudarPeriodo()" class="bg-transparent font-black text-xs uppercase outline-none p-2">
-                <option value="01">Janeiro</option><option value="02">Fevereiro</option><option value="03">Março</option>
-                <option value="04">Abril</option><option value="05">Maio</option><option value="06">Junho</option>
-                <option value="07">Julho</option><option value="08">Agosto</option><option value="09">Setembro</option>
-                <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
-            </select>
-            <select id="selectAno" onchange="mudarPeriodo()" class="bg-transparent font-black text-xs outline-none p-2">
-                <option value="2026">2026</option>
-                <option value="2027">2027</option>
-                <option value="2028">2028</option>
-                <option value="2029">2029</option>
-                <option value="2030">2030</option>
-            </select>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3 mb-4 text-center">
-            <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-200">
-                <p class="text-[9px] text-slate-400 uppercase font-black">Dinheiro</p>
-                <input type="number" id="saldoDinheiro" oninput="window.salvarEAtualizar()" class="text-lg font-bold w-full outline-none text-emerald-600 bg-transparent text-center" placeholder="0.00">
-            </div>
-            <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-200">
-                <p class="text-[9px] text-slate-400 uppercase font-black">Cartão</p>
-                <input type="number" id="saldoCartao" oninput="window.salvarEAtualizar()" class="text-lg font-bold w-full outline-none text-blue-600 bg-transparent text-center" placeholder="0.00">
-            </div>
-        </div>
-
-        <div id="statusCard" class="bg-slate-900 text-white p-6 rounded-[2.5rem] shadow-xl mb-6">
-            <div class="grid grid-cols-2 gap-4 text-center mb-4">
-                <div>
-                    <p class="text-[10px] uppercase opacity-60 font-bold tracking-widest mb-1">Saldo Real</p>
-                    <h2 id="saldoReal" class="text-xl font-black text-emerald-400 leading-none">R$ 0,00</h2>
-                </div>
-                <div class="border-l border-white/10">
-                    <p class="text-[10px] uppercase opacity-60 font-bold tracking-widest mb-1">Previsão Final</p>
-                    <h2 id="saldoFinal" class="text-xl font-black text-cyan-400 leading-none">R$ 0,00</h2>
-                </div>
-            </div>
-            <div class="text-center border-t border-white/10 pt-4">
-                <p class="text-[10px] font-black uppercase opacity-40">Planejado Total: <span id="totalPlanejado">R$ 0</span></p>
-            </div>
-        </div>
-
-        <div class="bg-white p-5 rounded-2xl shadow-sm mb-8 border border-slate-100">
-            <div class="grid grid-cols-4 gap-2 mb-3">
-                <input type="text" id="desc" placeholder="Item..." class="col-span-2 border-b-2 p-2 outline-none text-sm focus:border-indigo-500">
-                <input type="number" id="valor" placeholder="R$" class="col-span-1 border-b-2 p-2 outline-none text-sm focus:border-indigo-500">
-                <select id="prioridade" class="col-span-1 text-[10px] font-black border-b-2 bg-transparent outline-none uppercase">
-                    <option value="P0">P0</option><option value="P1">P1</option><option value="P2">P2</option>
-                </select>
-            </div>
-            <button onclick="window.adicionarGasto()" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-xs uppercase shadow-lg active:scale-95 transition-all">
-                Salvar Item
-            </button>
-        </div>
-
-        <div id="listaGastos" class="space-y-3"></div>
-    </div>
 </body>
 </html>
